@@ -177,7 +177,7 @@ function AuthForm() {
                             <input 
                                 type="text" 
                                 className="w-full px-3 py-2 border rounded-md mb-4 focus:outline-none focus:ring-2 focus:ring-blue-500" 
-                                placeholder="Username"
+                                placeholder="email"
                                 value={username}
                                 onChange={(e) => handleInputChange(e, setUsername)}
                                 required

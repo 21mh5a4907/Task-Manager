@@ -18,6 +18,8 @@ function Home() {
         status: 'yet-to-start',
         deadline: ''
     });
+    const [searchQuery, setSearchQuery] = useState('');
+    const [filteredTasks, setFilteredTasks] = useState([]);
     
     const navigate = useNavigate();
 
@@ -28,7 +30,9 @@ function Home() {
     const fetchTasks = async () => {
         try {
             const response = await axios.get('/tasks/');
-            setTasks(response.data.tasks || []);
+            const fetchedTasks = response.data.tasks || [];
+            setTasks(fetchedTasks);
+            setFilteredTasks(fetchedTasks);
             setLoading(false);
         } catch (error) {
             console.error('Error fetching tasks:', error);
@@ -91,7 +95,9 @@ function Home() {
             const response = await axios.post('/tasks/', formattedTask);
             
             if (response.status === 201) {
-                setTasks(prev => [...prev, response.data.task]);
+                const newTasks = [...tasks, response.data.task];
+                setTasks(newTasks);
+                setFilteredTasks(newTasks);
                 setNewTask({
                     title: '',
                     description: '',
@@ -145,6 +151,9 @@ function Home() {
                 setTasks(tasks.map(task => 
                     task.id === editingTask.id ? response.data.task : task
                 ));
+                setFilteredTasks(filteredTasks.map(task => 
+                    task.id === editingTask.id ? response.data.task : task
+                ));
                 setEditingTask(null);
             }
         } catch (error) {
@@ -157,7 +166,9 @@ function Home() {
         try {
             const response = await axios.delete(`/tasks/${taskId}/`);
             if (response.status === 200) {
-                setTasks(tasks.filter(task => task.id !== taskId));
+                const updatedTasks = tasks.filter(task => task.id !== taskId);
+                setTasks(updatedTasks);
+                setFilteredTasks(updatedTasks);
             }
         } catch (error) {
             console.error('Error deleting task:', error);
@@ -199,6 +210,23 @@ function Home() {
         setError(errorMessage);
     };
 
+    const handleSearch = (e) => {
+        const query = e.target.value.toLowerCase();
+        setSearchQuery(query);
+        
+        if (query.trim() === '') {
+            setFilteredTasks(tasks);
+        } else {
+            const filtered = tasks.filter(task => 
+                task.title.toLowerCase().includes(query) ||
+                task.description.toLowerCase().includes(query) ||
+                task.priority.toLowerCase().includes(query) ||
+                task.status.toLowerCase().includes(query)
+            );
+            setFilteredTasks(filtered);
+        }
+    };
+
     if (loading) {
         return <div className="loading">Loading...</div>;
     }
@@ -225,7 +253,17 @@ function Home() {
                 </div>
             </div>
 
-            <Dashboard tasks={tasks} />
+            <div className="search-bar mb-6">
+                <input
+                    type="text"
+                    placeholder="Search tasks..."
+                    className="w-full px-4 py-2 rounded-lg border focus:outline-none focus:ring-2 focus:ring-blue-500"
+                    onChange={handleSearch}
+                    value={searchQuery}
+                />
+            </div>
+
+            <Dashboard tasks={filteredTasks} />
 
             {showAddForm && (
                 <TaskForm 
@@ -237,7 +275,7 @@ function Home() {
             )}
 
             <TaskList 
-                tasks={tasks}
+                tasks={filteredTasks}
                 onEdit={handleEdit}
                 onDelete={handleDelete}
             />
